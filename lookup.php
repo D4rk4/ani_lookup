@@ -13,7 +13,7 @@ function find_2gis($phone) {
     $result = false;
     preg_match('/var data = {(.*?)};/', $data, $match);
     if($match) $json = json_decode('{'.$match[1].'}', true);
-    $result = $json['company'].', '.$json['region'];
+    if($json['company']) $result = $json['company'].', '.$json['region'];
     return $result;
 }
 
