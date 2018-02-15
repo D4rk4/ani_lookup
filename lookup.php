@@ -1,6 +1,7 @@
 <?php
 $ani = filter_input(INPUT_GET, 'ani', FILTER_SANITIZE_URL);
 $url = "http://apps.2gis.ru/phone/".$ani;
+$block = "route-to=+74957288980";
 
 function find_2gis($phone) {
     global $url;
@@ -13,7 +14,13 @@ function find_2gis($phone) {
     $result = false;
     preg_match('/var data = {(.*?)};/', $data, $match);
     if($match) $json = json_decode('{'.$match[1].'}', true);
-    if($json['company']) $result = $json['company'].', '.$json['region'];
+    if ($json['company']) {
+        if (strlen($json['blockedInfo']) == 0){
+           $result = $json['company'].', '.$json['region'];
+        } else {
+           $result = $block;
+        }
+    }
     return $result;
 }
 
