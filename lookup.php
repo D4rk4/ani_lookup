@@ -1,14 +1,73 @@
 <?php
-$ani = filter_input(INPUT_GET, 'ani', FILTER_SANITIZE_URL);
-$url = "http://apps.2gis.ru/phone/".$ani;
-$block = "route-to=+74957288980";
+$apitk = "<INSER YOURS>";
+$block = "route-to=666";
+$defcallerid = "Unknown Call";
+$curlua = "Mozilla/5.0 (X11; Linux x86_64; rv:59.0) Gecko/20100101 Firefox/59.0";
+$ani   = filter_input(INPUT_GET, 'ani', FILTER_SANITIZE_URL);
+$url   = "http://apps.2gis.ru/phone/".$ani;
+$tcapi = "https://tcapi.phphive.info/".$apitk."/search/".$ani;
+$redis = new Redis();
+
+function redis_conn($rhost, $rport) {
+        global $redis;
+        $redis->connect($rhost, $rport);
+        return $redis;
+}
+
+function redis_get($key){
+        try{
+                global $redis;
+                return $redis->get($key);
+        }catch( Exception $e ){
+                echo $e->getMessage();
+        }
+}
+
+function redis_set($key, $value){
+        try{
+                global $redis;
+                $redis->set($key, $value);
+        }catch( Exception $e ){
+                echo $e->getMessage();
+        }
+}
+
+function find_truecall($phone) {
+    global $tcapi;
+    global $block;
+    global $curlua;
+  if (strlen(redis_get($phone)) == 0) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $tcapi);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_USERAGENT, $curlua);
+    $data = curl_exec($ch);
+    curl_close($ch);
+    $result = false;
+    $json = json_decode($data, true);
+    if ($json['name']) {
+        if (strlen($json['spamType']) == 0){
+           $result = $json['name'];
+        } else {
+           $result = $block;
+        }
+    redis_set($phone, $result);
+    }
+  } else {
+   $result = redis_get($phone);
+  }
+    return $result;
+}
 
 function find_2gis($phone) {
     global $url;
+    global $block;
+    global $curlua;
+  if (strlen(redis_get($phone)) == 0) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (X11; Linux x86_64; rv:59.0) Gecko/20100101 Firefox/59.0');
+    curl_setopt($ch, CURLOPT_USERAGENT, $curlua);
     $data = curl_exec($ch);
     curl_close($ch);
     $result = false;
@@ -16,11 +75,15 @@ function find_2gis($phone) {
     if($match) $json = json_decode('{'.$match[1].'}', true);
     if ($json['company']) {
         if (strlen($json['blockedInfo']) == 0){
-           $result = $json['company'].', '.$json['region'];
+           $result = $json['company'];
         } else {
            $result = $block;
         }
+    redis_set($phone, $result);
     }
+  } else {
+    $result = redis_get($phone);
+  }
     return $result;
 }
 
@@ -66,10 +129,14 @@ function translit($string) {
     return strtr($string, $converter);
 }
 
+redis_conn( 'localhost', 6379 );
+
 if($id = find_local($ani)) {
         echo translit($id);
 } elseif ($id = find_2gis($ani)) {
         echo translit($id);
+} elseif ($id = find_truecall($ani)) {
+        echo translit($id);
 } else {
-        echo "Unknown Call";
+        echo $defcallerid;
 }
