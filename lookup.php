@@ -1,5 +1,5 @@
 <?php
-$apitk = "<INSER YOURS>";
+$apitk = "<INSERT YOURS>";
 $block = "route-to=666";
 $defcallerid = "Unknown Call";
 $curlua = "Mozilla/5.0 (X11; Linux x86_64; rv:59.0) Gecko/20100101 Firefox/59.0";
