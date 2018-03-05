@@ -63,8 +63,10 @@ function find_2gis($phone) {
     $data = curl_exec($ch);
     curl_close($ch);
     $result = false;
-    preg_match('/var data = {(.*?)};/', $data, $match);
-    if($match) $json = json_decode('{'.$match[1].'}', true);
+    if (!preg_match('/var data = (\{.*?\});/', $data, $match)) {
+            return false;
+    }
+    $json = json_decode($match[1], true);
     if ($json['company']) {
         if (strlen($json['blockedInfo']) == 0){
            $result = $json['company'];
