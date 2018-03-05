@@ -37,17 +37,15 @@ function find_truecall($phone) {
     curl_close($ch);
     $result = false;
     $json = json_decode($data, true);
-    if (false === $json) {
+    if (false === $json || !array_key_exists('name', $json)) {
             return false;
     }
-    if ($json['name']) {
-        if (strlen($json['spamType']) == 0){
+    if (strlen($json['spamType']) == 0){
            $result = $json['name'];
-        } else {
+    } else {
            $result = $block;
-        }
-    redis_set($phone, $result);
     }
+    redis_set($phone, $result);
   } else {
    $result = redis_get($phone);
   }
