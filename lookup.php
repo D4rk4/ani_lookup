@@ -37,6 +37,9 @@ function find_truecall($phone) {
     curl_close($ch);
     $result = false;
     $json = json_decode($data, true);
+    if (false === $json) {
+            return false;
+    }
     if ($json['name']) {
         if (strlen($json['spamType']) == 0){
            $result = $json['name'];
