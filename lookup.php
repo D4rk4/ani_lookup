@@ -15,21 +15,13 @@ function redis_conn($rhost, $rport) {
 }
 
 function redis_get($key){
-        try{
-                global $redis;
-                return $redis->get($key);
-        }catch( Exception $e ){
-                echo $e->getMessage();
-        }
+        global $redis;
+        return $redis->get($key);
 }
 
 function redis_set($key, $value){
-        try{
-                global $redis;
-                $redis->set($key, $value);
-        }catch( Exception $e ){
-                echo $e->getMessage();
-        }
+        global $redis;
+        $redis->set($key, $value);
 }
 
 function find_truecall($phone) {
@@ -129,14 +121,19 @@ function translit($string) {
     return strtr($string, $converter);
 }
 
-redis_conn( 'localhost', 6379 );
+try{
+        redis_conn( 'localhost', 6379 );
 
-if($id = find_local($ani)) {
-        echo translit($id);
-} elseif ($id = find_2gis($ani)) {
-        echo translit($id);
-} elseif ($id = find_truecall($ani)) {
-        echo translit($id);
-} else {
+        if($id = find_local($ani)) {
+                echo translit($id);
+        } elseif ($id = find_2gis($ani)) {
+                echo translit($id);
+        } elseif ($id = find_truecall($ani)) {
+                echo translit($id);
+        } else {
+                echo $defcallerid;
+        }
+}catch( Exception $e ){
         echo $defcallerid;
+        // echo 'Error: ' . $e->getMessage();
 }
