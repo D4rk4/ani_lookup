@@ -3,8 +3,8 @@ $apitk = "<INSER YOURS>";
 $block = "route-to=666";
 $defcallerid = "Unknown Call";
 $curlua = "Mozilla/5.0 (X11; Linux x86_64; rv:59.0) Gecko/20100101 Firefox/59.0";
-$ani   = filter_input(INPUT_GET, 'ani', FILTER_SANITIZE_URL);
-$url   = "http://apps.2gis.ru/phone/".$ani;
+$ani   = (int) $_GET['ani'];
+$url   = "http://apps.2gis.ru/phone/". $ani;
 $tcapi = "https://tcapi.phphive.info/".$apitk."/search/".$ani;
 $redis = new Redis();
 
