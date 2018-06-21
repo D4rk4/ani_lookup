@@ -6,6 +6,11 @@ $curlua = "Mozilla/5.0 (X11; Linux x86_64; rv:59.0) Gecko/20100101 Firefox/59.0"
 $ani   = (int) $_GET['ani'];
 $url   = "http://apps.2gis.ru/phone/". $ani;
 $tcapi = "https://tcapi.phphive.info/".$apitk."/search/".$ani;
+
+$botToken="<INSERT YOURS>";
+$tg="https://api.telegram.org/bot".$botToken;
+$tgid='<INSERT YOURS>';
+
 $redis = new Redis();
 
 function redis_conn($rhost, $rport) {
@@ -37,15 +42,17 @@ function find_truecall($phone) {
     curl_close($ch);
     $result = false;
     $json = json_decode($data, true);
-    if (false === $json || !array_key_exists('name', $json)) {
+    if (false === $json) {
             return false;
     }
-    if (strlen($json['spamType']) == 0){
+    if ($json['name']) {
+        if (strlen($json['spamType']) == 0){
            $result = $json['name'];
-    } else {
+        } else {
            $result = $block;
-    }
+        }
     redis_set($phone, $result);
+    }
   } else {
    $result = redis_get($phone);
   }
@@ -95,6 +102,37 @@ function find_local($phone) {
     return $result;
 }
 
+function genout($phone,$id) {
+	global $defcallerid;
+	global $botToken;
+	global $tg;
+	global $tgid;
+	global $block;
+	if (strlen($id) < 1) {
+                $id=$defcallerid;
+        }
+	echo translit($id);
+	// Telegram Ntfy
+	if($id == $block){
+		$id = "Спамеры";
+	}
+	$params=[
+		'chat_id'=>$tgid,
+		'parse_mode'=>'markdown',
+		'text'=>'*NEW CALL FROM EXTERNAL*
+*Phone number:* '.$phone.'
+*Caller ID:* '.$id
+	];
+	$ch = curl_init($tg . '/sendMessage');
+	curl_setopt($ch, CURLOPT_HEADER, false);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_POST, 1);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, ($params));
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+	$result = curl_exec($ch);
+	curl_close($ch);
+}
+
 function translit($string) {
     $converter = array(
         'а' => 'a',   'б' => 'b',   'в' => 'v',
@@ -128,13 +166,11 @@ try{
         redis_conn( 'localhost', 6379 );
 
         if($id = find_local($ani)) {
-                echo translit($id);
-        } elseif ($id = find_2gis($ani)) {
-                echo translit($id);
+		genout($ani,$id);
         } elseif ($id = find_truecall($ani)) {
-                echo translit($id);
+		genout($ani,$id);
         } else {
-                echo $defcallerid;
+		genout($ani,$id);
         }
 }catch( Exception $e ){
         echo $defcallerid;
