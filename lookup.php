@@ -4,11 +4,8 @@ $block = "route-to=666";
 $defcallerid = "Unknown Call";
 $curlua = "Mozilla/5.0 (X11; Linux x86_64; rv:59.0) Gecko/20100101 Firefox/59.0";
 $ani   = (int) $_GET['ani'];
-$url   = "http://apps.2gis.ru/phone/". $ani;
-$tcapi = "https://tcapi.phphive.info/".$apitk."/search/".$ani;
 
-$botToken="<INSERT YOURS>";
-$tg="https://api.telegram.org/bot".$botToken;
+$tgtoken="<INSERT YOURS>";
 $tgid='<INSERT YOURS>';
 
 $redis = new Redis();
@@ -29,13 +26,38 @@ function redis_set($key, $value){
         $redis->set($key, $value);
 }
 
-function find_truecall($phone) {
-    global $tcapi;
+function find_shouldianswer($phone) {
     global $block;
     global $curlua;
+    $url='https://www.neberitrubku.ru/nomer-telefona/'.$phone;
   if (strlen(redis_get($phone)) == 0) {
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $tcapi);
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_USERAGENT, $curlua);
+    $data = curl_exec($ch);
+    curl_close($ch);
+    $result = false;
+	if (!preg_match('/<div class="score negative"><\/div>/', $data, $match)) {
+            return false;
+        } else {
+           $result = $block;
+        }
+    redis_set($phone, $result);
+  } else {
+    $result = redis_get($phone);
+  }
+    return $result;
+}
+
+
+function find_truecall($phone) {
+    global $block;
+    global $curlua;
+    $url = "https://tcapi.phphive.info/".$apitk."/search/".$phone;
+  if (strlen(redis_get($phone)) == 0) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_USERAGENT, $curlua);
     $data = curl_exec($ch);
@@ -60,9 +82,9 @@ function find_truecall($phone) {
 }
 
 function find_2gis($phone) {
-    global $url;
     global $block;
     global $curlua;
+    $url   = "http://apps.2gis.ru/phone/". $phone;
   if (strlen(redis_get($phone)) == 0) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -104,26 +126,26 @@ function find_local($phone) {
 
 function genout($phone,$id) {
 	global $defcallerid;
-	global $botToken;
-	global $tg;
+	global $tgtoken;
 	global $tgid;
 	global $block;
+	$url = "https://api.telegram.org/bot".$tgtoken;
 	if (strlen($id) < 1) {
                 $id=$defcallerid;
         }
 	echo translit($id);
 	// Telegram Ntfy
 	if($id == $block){
-		$id = "Спамеры";
+		$id = "Спамеры https://www.neberitrubku.ru/nomer-telefona/".$phone;
 	}
 	$params=[
 		'chat_id'=>$tgid,
 		'parse_mode'=>'markdown',
-		'text'=>'*NEW CALL FROM EXTERNAL*
-*Phone number:* '.$phone.'
+		'text'=>'*NEW INCOMING VOICE CALL*
+*Phone number:* +'.$phone.'
 *Caller ID:* '.$id
 	];
-	$ch = curl_init($tg . '/sendMessage');
+	$ch = curl_init($url . '/sendMessage');
 	curl_setopt($ch, CURLOPT_HEADER, false);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	curl_setopt($ch, CURLOPT_POST, 1);
@@ -166,6 +188,8 @@ try{
         redis_conn( 'localhost', 6379 );
 
         if($id = find_local($ani)) {
+		genout($ani,$id);
+        } elseif ($id = find_shouldianswer($ani)) {
 		genout($ani,$id);
         } elseif ($id = find_truecall($ani)) {
 		genout($ani,$id);
