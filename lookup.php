@@ -54,6 +54,7 @@ function find_shouldianswer($phone) {
 function find_truecall($phone) {
     global $block;
     global $curlua;
+    global $apitk;
     $url = "https://tcapi.phphive.info/".$apitk."/search/".$phone;
   if (strlen(redis_get($phone)) == 0) {
     $ch = curl_init();
