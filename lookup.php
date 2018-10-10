@@ -150,35 +150,37 @@ function find_local($phone) {
 }
 
 function genout($phone,$id) {
-	global $defcallerid;
-	global $tgtoken;
-	global $tgid;
-	global $block;
-	$url = "https://api.telegram.org/bot".$tgtoken;
-	if (strlen($id) < 1) {
+        global $defcallerid;
+        global $tgtoken;
+        global $tgid;
+        global $block;
+        $url = "https://api.telegram.org/bot".$tgtoken;
+        if (strlen($id) < 1) {
                 $id=$defcallerid;
         }
-	echo translit($id);
-	// Telegram Ntfy
-	if($id == $block){
-		$id = "Спамеры https://www.neberitrubku.ru/nomer-telefona/".$phone;
-	}
-	$params=[
-		'chat_id'=>$tgid,
-		'parse_mode'=>'markdown',
-		'text'=>'*NEW INCOMING VOICE CALL*
+        echo translit($id);
+        // Telegram Ntfy
+        if($id == $block){
+                $id = "[Спамеры](https://www.neberitrubku.ru/nomer-telefona/".$phone.")";
+        }
+        $params=[
+                'chat_id'=>$tgid,
+                'parse_mode'=>'markdown',
+                'disable_web_page_preview'=>'True',
+                'text'=>'*NEW INCOMING VOICE CALL*
 *Phone number:* +'.$phone.'
 *Caller ID:* '.$id
-	];
-	$ch = curl_init($url . '/sendMessage');
-	curl_setopt($ch, CURLOPT_HEADER, false);
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-	curl_setopt($ch, CURLOPT_POST, 1);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, ($params));
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-	$result = curl_exec($ch);
-	curl_close($ch);
+        ];
+        $ch = curl_init($url . '/sendMessage');
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, ($params));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $result = curl_exec($ch);
+        curl_close($ch);
 }
+
 
 function translit($string) {
     $converter = array(
