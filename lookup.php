@@ -160,12 +160,15 @@ function genout($phone,$id) {
         }
         echo translit($id);
         // Telegram Ntfy
+        $silent = "False";
         if($id == $block){
                 $id = "[Спамеры](https://www.neberitrubku.ru/nomer-telefona/".$phone.")";
+                $silent = "True";
         }
         $params=[
                 'chat_id'=>$tgid,
                 'parse_mode'=>'markdown',
+                'disable_notification'=>$silent,
                 'disable_web_page_preview'=>'True',
                 'text'=>'*NEW INCOMING VOICE CALL*
 *Phone number:* +'.$phone.'
@@ -180,6 +183,7 @@ function genout($phone,$id) {
         $result = curl_exec($ch);
         curl_close($ch);
 }
+
 
 
 function translit($string) {
