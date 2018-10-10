@@ -50,6 +50,30 @@ function find_shouldianswer($phone) {
     return $result;
 }
 
+function find_bizly($phone) {
+    global $block;
+    global $curlua;
+    $url='https://bizly.ru/phone/'.$phone.'/';
+  if (strlen(redis_get($phone)) == 0) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_USERAGENT, $curlua);
+    $data = curl_exec($ch);
+    curl_close($ch);
+    $result = false;
+	if (!preg_match('/<div class="title"><a href=.*?<\/a><\/div>/', $data, $match)) {
+            return false;
+        } else {
+		$result = strip_tags($match[0]);
+        }
+    redis_set($phone, $result);
+  } else {
+    $result = redis_get($phone);
+  }
+    return $result;
+}
+
 
 function find_truecall($phone) {
     global $block;
@@ -192,7 +216,7 @@ try{
 		genout($ani,$id);
         } elseif ($id = find_shouldianswer($ani)) {
 		genout($ani,$id);
-        } elseif ($id = find_truecall($ani)) {
+        } elseif ($id = find_bizly($ani)) {
 		genout($ani,$id);
         } else {
 		genout($ani,$id);
